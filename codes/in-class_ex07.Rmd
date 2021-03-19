@@ -1,0 +1,151 @@
+---
+title: "In-class_Ex07"
+author: "Su Yiin Ang"
+date: "2/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Installing and launching R packages
+
+First, we will check if tidyverse packages have been installed. If not, R will go ahead and install tidyverse packages before launching them.
+
+```{r, message = FALSE, echo = FALSE}
+packages = c('tidyverse')
+
+for(p in packages){
+  if(!require(p, character.only = T)){
+  install.packages(p)
+    }
+  library(p, character.only = T)
+  }
+```
+
+## Importing data file
+
+### Importing using readr package
+
+Importing Exam_data.csv by using *read_csv()* of **readr** package.
+
+```{r, message = FALSE}
+exam <- read_csv("data/Exam_data.csv")
+```
+
+## Plotting a bar chart
+
+```{r}
+ggplot(data = exam, aes(x = RACE)) + 
+  geom_bar()
+```
+
+## Plotting a dotplot
+
+```{r}
+ggplot(data = exam, aes(x = MATHS)) + 
+  geom_dotplot(dotsize = 0.5, binwidth = 2.5) +
+  scale_y_continuous(NULL, breaks = NULL)
+```
+
+
+## Plotting a histogram
+
+```{r}
+ggplot(data = exam, aes(x = MATHS)) + 
+  geom_histogram(bins = 20, 
+                 colour = "black",
+                 fill = "light blue")
+```
+
+## Plotting a stacked bar chart
+
+```{r}
+ggplot(data = exam, aes(x = MATHS, fill = GENDER)) + 
+  geom_histogram(bins = 20, 
+                 colour = "grey30")
+```
+
+
+## Plotting a density plot
+
+```{r}
+ggplot(data = exam, aes(x = MATHS, fill = GENDER)) + 
+  geom_density()
+```
+
+## Plotting a boxplot
+
+```{r}
+ggplot(data = exam, aes(x = MATHS, y = GENDER)) + 
+  geom_boxplot(notch =TRUE, fill = 'light blue')
+```
+
+
+## Plotting boxplot and scatterplot
+
+```{r}
+ggplot(data = exam, aes(y = MATHS, x = GENDER)) + 
+  geom_boxplot(fill = 'light blue') + 
+  geom_point(position = "jitter",
+             size = 0.5)
+```
+
+
+## Plotting violin plot
+
+See this distribution to compliment the boxplot.
+
+alpha in boxplot refers to opacity as per Tableau.
+
+Violin plot is asymmetric.
+```{r}
+ggplot(data = exam, aes(y = MATHS, x = GENDER)) + 
+  geom_violin(fill = 'light blue') +
+  geom_boxplot(alpha = 0.5) 
+```
+
+## Plotting a scatter plot
+```{r}
+ggplot(data = exam, aes(x = MATHS, y = ENGLISH)) + 
+  geom_point()
+```
+
+
+## Plotting mean value to boxplot
+
+Plot boxplot first before summary statistics.
+
+```{r}
+ggplot(data = exam, aes(x = GENDER, y = MATHS)) + 
+  geom_boxplot() +
+  stat_summary(geom = "point",
+               fun.y="mean",
+               colour = "red",
+               size =4)
+```
+
+## Plotting bst fit curve on scatterplot
+
+default method is loess
+
+lm = least square method
+
+```{r}
+ggplot(data = exam, aes(x = MATHS, y = ENGLISH)) + 
+  geom_point() + 
+  geom_smooth(size = 0.5, method = lm)
+```
+
+
+## Change reset axis to start at 0
+```{r}
+ggplot(data=exam, aes(x= MATHS, y=ENGLISH)) +
+  geom_point() +
+  geom_smooth(method=lm,
+              size=0.5) +
+  coord_cartesian(xlim=c(50,100),
+                  ylim=c(50,100))
+```
+

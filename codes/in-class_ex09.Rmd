@@ -1,0 +1,260 @@
+---
+title: "in-class_ex08"
+author: "Su Yiin Ang"
+date: "3/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## In-class_ex08
+### Load necessary packages
+```{r, message = FALSE}
+packages = c('ggstatsplot', 'tidyverse', 'corrplot','ggpubr', 'GGally', 'corrgram')
+for (p in packages){
+  if(!require(p,character.only = T)){
+    install.packages(p)
+  }
+  library(p, character.only = T)
+}
+```
+
+### read csv file
+```{r, message = FALSE}
+exam <- read_csv('data/Exam_data.csv')
+```
+
+### Comparison between groups - compare the two means
+## this package doesn't filter NA - need to filter out NA first 
+to be used as input parameter for project. 
+i.e plot.type - whether users want to see as violin, boxplot or violin / boxplot
+type - parameter / non-parametric / robust / bayers 
+confidence interval - range from 0 to 1
+only show the key ones - the rest can leave as default
+references : <https://indrajeetpatil.github.io/ggstatsplot/reference/ggbetweenstats.html>
+```{r}
+ggbetweenstats(
+  data = exam,
+  x = GENDER,
+  y = MATHS,
+  title = 'Comparison of Maths Scores by gender'
+)
+```
+
+# Non parametric
+For comparing median
+```{r}
+set.seed(12345)
+ggbetweenstats(
+  data = exam,
+  x = GENDER,
+  y = MATHS,
+  type = 'np',
+  title = 'Comparison of Maths Scores by gender'
+)
+```
+
+usually only want to show the significant ones.
+
+p value smaller than 0.05
+```{r}
+ggbetweenstats(
+  data = exam,
+  x = RACE,
+  y = MATHS,
+  type = 'np',
+  mean.ci = TRUE,
+  pairwise.comparisons = TRUE,
+  pairwise.display = 's',
+  p.adjust.method = 'fdr',
+)
+```
+## Scatterplot
+```{r}
+ggscatterstats(
+  data = exam,
+  x = ENGLISH,
+  y = MATHS,
+  label.var = ID,
+  label.expression = ENGLISH <30 & MATHS >75,
+  title = 'Relationship between English and Maths'
+)
+```
+
+## ggcoefstats
+
+### summarise and present regression parameter estimates - usually in a table
+
+first run lm model using lm function
+
+stats shown = parameter , t-stats , pvalue
+
+
+## load wine dataset
+```{r, message = FALSE}
+wine <- read_csv('data/wine_quality.csv')
+
+```
+
+```{r}
+fa <- ggplot(data = wine, aes(x = `fixed acidity`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+va <- ggplot(data = wine, aes(x = `volatile acidity`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+ca <- ggplot(data = wine, aes(x = `citric acid`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+rs <- ggplot(data = wine, aes(x = `residual sugar`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+ch <- ggplot(data = wine, aes(x = `chlorides`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+fsd <- ggplot(data = wine, aes(x = `free sulfur dioxide`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+tsd <- ggplot(data = wine, aes(x = `total sulfur dioxide`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+density <- ggplot(data = wine, aes(x = `density`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+ph  <- ggplot(data = wine, aes(x = `pH`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+sul  <- ggplot(data = wine, aes(x = `sulphates`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+al  <- ggplot(data = wine, aes(x = `alcohol`)) + geom_histogram(bins = 20, colour = 'black', fill = 'light blue')
+```
+
+```{r}
+ggarrange(fa,va,ca,rs,ch,fsd,tsd,density, ph, sul,al, ncol = 4, nrow = 3)
+```
+
+## correlation matrix
+
+
+### several packages available 
+
+ggcorrmat from ggstatsplot - 3 things to watch for 
+
+(1) colour - divergent colour 
+
+(2) cross - indicates that the variables are not statistically significant
+
+benefits - provide statistical test - if you're interested in finding out how significant etc.
+```{r}
+ggcorrmat(
+  data = wine,
+  cor.vars= c(1:11)
+)
+```
+
+## correlogram 
+
+from the corrplot package
+
+benefits : able to reorder correlation matrix - hclust, alphabetical, PCA, etc.
+<https://cran.r-project.org/web/packages/corrplot/vignettes/corrplot-intro.html>
+
+BUT corrplot cannot understand dataframe - need to use cor function to output correlation matrix first
+
+benefits - more useful if you want to do **variable selection** as compared to the ggstatsplot package as corrplot enables you to arrange the variables 
+```{r}
+wine.cor = cor(wine[,1:11]) # need to create correlation matrix first
+corrplot(wine.cor,
+         method ='ellipse',
+         type = 'lower',
+         diag = FALSE, #words are not diag
+         tl.col = 'black' #text label colour
+         )
+```
+
+## change method and order
+
+```{r}
+wine.cor = cor(wine[,1:11]) # need to create correlation matrix first
+corrplot(wine.cor,
+         method ='color',
+         type = 'lower',
+         diag = FALSE, #words are not diag
+         tl.col = 'black', #text label colour
+         order = 'AOE'
+         )
+
+```
+
+
+## GGally package
+
+```{r, message = FALSE}
+ggpairs(data = wine,
+        columns = c(1:11),
+        size = 0.1)
+```
+
+
+```{r}
+corrgram(wine.cor,
+         order = TRUE,
+         upper.panel = panel.cor,
+         main = 'Correlation')
+```
+
+
+## heatmap
+
+if you dont have alot of variables
+
+consider if you need to scale it or standarise.
+
+```{r, message= FALSE}
+wh <- read_csv('data/WHData-2018.csv')
+```
+
+ideally want to have interactive heatmap as you usually have alot of variables
+
+### load plotly heatmap
+
+```{r, message = FALSE}
+packages = c('heatmaply', 'readr', 'seriation', 'dendextend','parallelPlot')
+for (p in packages){
+  if(!require(p,character.only = T)){
+    install.packages(p)
+  }
+  library(p, character.only = T)
+}
+```
+
+## data preparation
+
+```{r}
+row.names(wh) <- wh$Country # country becomes row name
+```
+
+```{r}
+wh1 <- select(wh, c(3,7:12))
+wh_matrix <- data.matrix(wh1)
+```
+
+
+## Heatmaply
+
+avoid using red and green
+
+avoid using diverging colours
+
+```{r}
+heatmaply(normalize(wh_matrix),
+          Colv=NA,
+          seriate = "none", 
+          colors = Blues,
+          k_row = 5, # 5 clusters
+          margins = c(NA, 200, 60, NA),
+          fontsize_row = 4,
+          fontsize_col = 5,
+          main = 'World Happiness Score and Variables by Country, 2018',
+          xlab = 'World Happiness Indicators',
+          ylab = 'Countries'
+          )
+
+```
+## parallel coordinates
+
+
+kmeans clustering cannot be aggregated upwards or downwards - need to use parallel coordinates
+
+```{r}
+parallelPlot(wh)
+```
+
+```{r}
+histo <- rep(TRUE, ncol(wh)) #create histogram - and plot his over the plot, true refer to all the variables selected - actual function is rep.
+parallelPlot(wh,
+              histoVisibility = histo)
+```
