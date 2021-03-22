@@ -1,0 +1,193 @@
+---
+title: "in-class_ex10"
+author: "Su Yiin Ang"
+date: "3/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE,
+                      fig.retina = 3,
+                      warning = FALSE,
+                      eval = TRUE)
+```
+
+
+## Installing and launching R packages
+
+```{r}
+packages = c('tmap','sf','tidyverse')
+
+for(p in packages){
+  if(!require(p, character.only = T)){
+  install.packages(p)
+    }
+  library(p, character.only = T)
+  }
+```
+
+## Import data
+
+```{r}
+sgpools <- read_csv('data/aspatial/SGPools_svy21.csv')
+```
+
+
+## combine xcoord and ycoord
+if you have lat and long, lat is xcoord & long is ycoord
+```{r}
+sgpools_sf <- st_as_sf(sgpools, 
+                       coords = c('XCOORD', 'YCOORD'),
+                       crs = 3414) #sg epsg code
+```
+
+# point a point symbol map
+
+```{r}
+tmap_mode('view')
+tm_shape(sgpools_sf) + #base layer
+tm_bubbles(col='red',
+          size = .5,
+          border.col = 'black',
+          border.lwd = 1)
+
+```
+## Proportional symbol map
+
+```{r}
+tm_shape(sgpools_sf) +
+  tm_bubbles(col = 'red',
+            size = 'Gp1Gp2 Winnings',
+            border.col = 'black',
+            border.lwd = 0.5) #control width of line.
+
+```
+## Proportional symbol map - colour by outlet type
+
+```{r}
+tm_shape(sgpools_sf) + 
+tm_bubbles(col='OUTLET TYPE',
+          size = 'Gp1Gp2 Winnings',
+          border.col = 'black',
+          border.lwd = 0.5)
+```
+
+## create two views and synchronise them
+
+```{r, echo = FALSE}
+tm_shape(sgpools_sf) + 
+  tm_bubbles(col='OUTLET TYPE',
+          size = 'Gp1Gp2 Winnings',
+          border.col = 'black',
+          border.lwd = 0.5) +
+  tm_facets(by = 'OUTLET TYPE',
+            nrow = 1,
+            sync = TRUE)
+```
+
+# Choropleth mapping
+
+## import data
+
+```{r}
+mpsz <- st_read(dsn = 'data/geospatial',
+                layer = 'MP14_SUBZONE_WEB_PL') #shape file 
+```
+
+## bring in population data
+
+```{r}
+popagsex <- read_csv('data/aspatial/respopagsex2000to2018.csv')
+
+```
+
+## data wrangling
+
+
+### with pivot wider - should use this one
+
+```{r}
+popagsex %>%
+  filter(Sex == 'Males') %>%
+  filter(Time == 2018) %>%
+  pivot_wider(names_from = AG, values_from = Pop)
+```
+
+### with spread
+
+```{r}
+popagsex2018_male <- popagsex %>%
+  filter(Sex == 'Males') %>%
+  filter(Time == 2018) %>%
+  spread(AG, Pop) %>% #try with pivot wide
+  mutate(YOUNG = `0_to_4` + `5_to_9` + `10_to_14` + `15_to_19` + `20_to_24` ) %>%
+  mutate(`ECONOMY ACTIVE` = rowSums(.[9:13]) + rowSums(.[15:17])) %>%
+  mutate(`AGED` = rowSums(.[18:22])) %>%
+  mutate(`TOTAL` = rowSums(.[5:22])) %>%
+  mutate(`DEPENDENCY` = (`YOUNG` + `AGED`) / `ECONOMY ACTIVE`) %>%
+  mutate_at(.vars = vars(PA,SZ), .funs = funs(toupper)) %>%
+  select(`PA`, `SZ`,`YOUNG`, `ECONOMY ACTIVE`, `AGED`, `TOTAL`,`DEPENDENCY`) %>% #only select these variables
+  filter(`ECONOMY ACTIVE` > 0)
+```
+
+## combine with map layer
+
+```{r}
+mpsz_agemale2018 <- left_join(mpsz, popagsex2018_male,
+                              by = c('SUBZONE_N' = 'SZ')) #join by common variable
+```
+
+## plot choropleth
+
+```{r}
+tmap_mode('plot')
+qtm(mpsz_agemale2018,
+    fill = 'DEPENDENCY')
+```
+
+
+```{r}
+tm_shape(mpsz_agemale2018) +
+  tm_polygons('DEPENDENCY')
+```
+
+```{r}
+tm_shape(mpsz_agemale2018) +
+  tm_fill('DEPENDENCY') +
+  tm_borders(lwd = 0.1, alpha = 1)
+```
+
+## classification methods of tmap
+
+```{r}
+tm_shape(mpsz_agemale2018) +
+  tm_fill('DEPENDENCY',
+          n = 8, 
+          style = 'quantile') + #default is prettty
+  tm_borders(alpha = 0.5)
+```
+
+## colour scheme
+
+```{r}
+tm_shape(mpsz_agemale2018) +
+  tm_fill('DEPENDENCY',
+          n = 6,
+          style = 'quantile',
+          palette = 'Blues') +
+  tm_borders(alpha = 0.5)
+```
+
+### inverse the colour
+
+```{r}
+tm_shape(mpsz_agemale2018) +
+  tm_fill('DEPENDENCY',
+          n = 6,
+          style = 'quantile',
+          palette = '-Blues') + #add - before colour
+  tm_borders(alpha = 0.5)
+```
+
+
